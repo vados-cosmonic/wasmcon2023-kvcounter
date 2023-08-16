@@ -1,7 +1,13 @@
 [package]
-name = "wasmcon-2023-keyvalue"
+name = "wasmcon2023-keyvalue"
 version = "0.1.0"
 edition = "2021"
+description = """
+Wasmcon2023 WASI Keyvalue demo
+"""
+
+[lib]
+crate-type = [ "cdylib" ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
