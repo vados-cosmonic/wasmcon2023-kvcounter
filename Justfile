@@ -3,6 +3,7 @@ cargo := env_var_or_default("CARGO", "cargo")
 wasm_tools := env_var_or_default("WASM_TOOLS", "wasm-tools")
 
 expected_wasm_path := "target/wasm32-wasi/release/wasmcon2023_keyvalue.wasm"
+wasm_preview1_output_path := "target/wasm32-wasi/release/wasmcon2023_keyvalue.preview1.wasm"
 
 _default:
     {{just}} --list
@@ -10,7 +11,7 @@ _default:
 # Build the WASM component
 build:
     {{cargo}} build --target=wasm32-wasi --release
-    {{wasm_tools}} component new --adapt=wasi_snapshot_preview1.wasm {{expected_wasm_path}}
+    {{wasm_tools}} component new --adapt=wasi_snapshot_preview1.wasm {{expected_wasm_path}} -o {{wasm_preview1_output_path}}
 
 # Run the demo
 run:
