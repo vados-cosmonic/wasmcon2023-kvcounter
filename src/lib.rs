@@ -1,4 +1,9 @@
-wit_bindgen::generate!("kvcounter");
+wit_bindgen::generate!({
+    world: "kvcounter",
+    exports: {
+        "wasi:http/incoming-handler": KvCounter,
+    }
+});
 
 use wasi::{
     http::types::{
@@ -130,9 +135,5 @@ impl IncomingHandler for KvCounter {
                 );
             }
         };
-
-        // Build response
     }
 }
-
-export_kvcounter!(KvCounter);
