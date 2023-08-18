@@ -3,16 +3,19 @@ cargo := env_var_or_default("CARGO", "cargo")
 wasm_tools := env_var_or_default("WASM_TOOLS", "wasm-tools")
 
 expected_wasm_path := "target/wasm32-wasi/release/wasmcon2023_keyvalue.wasm"
-wasm_preview1_output_path := "target/wasm32-wasi/release/wasmcon2023_keyvalue.preview1.wasm"
+wasm_preview2_output_path := "target/wasm32-wasi/release/wasmcon2023_keyvalue.preview2.wasm"
 
 _default:
     {{just}} --list
 
-# Build the WASM component
-build:
-    {{cargo}} build --target=wasm32-wasi --release
-    {{wasm_tools}} component new --adapt=wasi_snapshot_preview1.wasm {{expected_wasm_path}} -o {{wasm_preview1_output_path}}
+# Ensure wasm-tools is the right version
+check-wasm-tools:
+    @({{wasm_tools}} --version | grep "wasm-tools 1.0.38 (a0c46a7a1 2023-08-10)") || (echo "ERROR: please locally build & run latest wasm-tools @ a0c46a7a1)" && exit -1)
 
-# Run the demo
-run:
-    {{cargo}} run --bin wasm-component-demo --manifest-path=wasm-component-demo/Cargo.toml
+# Build the WASM component
+build: check-wasm-tools
+    # Building wasm preview1 module...
+    @{{cargo}} build --target=wasm32-wasi --release
+    # Adapting wasm preview1 module to preview2 component...
+    @{{wasm_tools}} component new --adapt=wasi_snapshot_preview1.wasm {{expected_wasm_path}} -o {{wasm_preview2_output_path}}
+    @echo "[success] preview2 component output to [{{wasm_preview2_output_path}}]"
