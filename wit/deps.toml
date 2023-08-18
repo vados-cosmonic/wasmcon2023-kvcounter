@@ -2,4 +2,3 @@ keyvalue = "https://github.com/WebAssembly/wasi-keyvalue/archive/main.tar.gz"
 http = "https://github.com/WebAssembly/wasi-http/archive/main.tar.gz"
 # see: https://github.com/wasmCloud/wasmCloud/blob/main/crates/runtime/wit/deps.toml
 poll = "https://github.com/WebAssembly/wasi-poll/archive/main.tar.gz" # TODO: Remove once keyvalue is compatible
-io = "https://github.com/WebAssembly/wasi-io/archive/1b22f18a5af1274724a293782798f91e7dcf4ed6.tar.gz" # Pin for Wasmtime 11 compatibility

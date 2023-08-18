@@ -13,4 +13,4 @@ crate-type = [ "cdylib" ]
 
 [dependencies]
 # wit-bindgen = "0.9.0"
-wit-bindgen = { git = "https://github.com/bytecodealliance/wit-bindgen.git", ref = "a15cb9dbee4f619b286fc22879a94f7197d55b18" }
+wit-bindgen = { git = "https://github.com/bytecodealliance/wit-bindgen.git", rev = "a15cb9dbee4f619b286fc22879a94f7197d55b18" }
