@@ -7,9 +7,8 @@ wit_bindgen::generate!({
 
 use wasi::{
     http::types::{
-        finish_outgoing_stream, incoming_request_method, incoming_request_path_with_query,
-        new_fields, new_outgoing_response, outgoing_response_write, set_response_outparam, Method,
-        ResponseOutparam,
+        finish_outgoing_stream, incoming_request_method, new_fields, new_outgoing_response,
+        outgoing_response_write, set_response_outparam, Method, ResponseOutparam, incoming_request_path,
     },
     io::streams::write,
     keyvalue::{
@@ -55,15 +54,15 @@ impl KvCounter {
 }
 
 /// Write a WASI HTTP response out
-fn write_wasi_http_response(body: impl AsRef<[u8]>, response_outparam: ResponseOutparam) {
+fn write_wasi_http_response(body: impl AsRef<[u8]>, _response_outparam: ResponseOutparam) {
     let headers = new_fields(&Vec::new());
-    let outgoing_response = new_outgoing_response(200, headers).expect("failed to create response");
+    let outgoing_response = new_outgoing_response(200, headers);
     let outgoing_stream =
         outgoing_response_write(outgoing_response).expect("failed to write outgoing response");
     write(outgoing_stream, body.as_ref()).expect("failed to write output to stream");
-    finish_outgoing_stream(outgoing_stream);
-    set_response_outparam(response_outparam, Ok(outgoing_response))
-        .expect("failed to set response");
+    finish_outgoing_stream(outgoing_stream, None);
+    // ??? This no longer takes the response outparam... Are we limited to one request at a time?
+    set_response_outparam(Ok(outgoing_response)).expect("failed to set response");
 }
 
 impl IncomingHandler for KvCounter {
@@ -72,11 +71,7 @@ impl IncomingHandler for KvCounter {
         let method = incoming_request_method(request);
 
         // Decipher path
-        let path_with_query = incoming_request_path_with_query(request).expect("invalid path");
-        let path = match path_with_query.split_once("?") {
-            Some((v, _)) => v,
-            _ => "default",
-        };
+        let path = incoming_request_path(request);
         let trimmed_path: Vec<&str> = path.trim_matches('/').split('/').collect();
 
         // Generate an outgoing request
