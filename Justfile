@@ -35,7 +35,13 @@ build-wasm-tools:
 # Operations #
 ##############
 
-# Set up links
+expected_signed_wasm_path := absolute_path("build/wasmcon2023_keyvalue_s.wasm")
+
+# Run the actor on a given host
+run-actor host_id:
+    @{{wash}} start actor file://{{expected_signed_wasm_path}} --host-id {{host_id}}
+
+# Set up links to a given in-lattice actor_id
 setup-links actor_id:
     # Setting up links for HTTP provider (VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M)
     @{{wash}} link put {{actor_id}} VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M wasmcloud:httpserver
