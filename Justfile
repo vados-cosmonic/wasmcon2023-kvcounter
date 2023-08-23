@@ -36,7 +36,6 @@ build-wasm-tools:
 ##############
 
 # NOTE: don't forget to set up WASMCLOUD_CLUSTER_SEED on the rust host when you start it!
-# NOTE: you *must* run kvredis v0.19.0
 
 expected_signed_wasm_path := absolute_path("build/wasmcon2023_keyvalue_s.wasm")
 
