@@ -27,14 +27,20 @@ use ui::get_static_asset;
 
 use crate::exports::wasi::http::incoming_handler::{IncomingHandler, IncomingRequest};
 
-const BUCKET: &str = "default";
+/// Helper that returns content type of a json response
+fn content_type_json() -> [(String, Vec<u8>); 1] {
+    [("Content-Type".into(), "application/json".into())]
+}
+
+// NOTE: custom buckets are not yet supported
+const BUCKET: &str = "";
 
 /// Implementation struct for the 'kvcounter' world (see: wit/kvcounter.wit)
 struct KvCounter;
 
 impl KvCounter {
     /// Increment (possibly negatively) the counter for a given key
-    fn increment_counter(bucket: u32, key: &String, amount: i32) -> anyhow::Result<()> {
+    fn increment_counter(bucket: u32, key: &String, amount: i32) -> anyhow::Result<i32> {
         let current_value: i32 = match get(bucket, key) {
             // If the value exists, parse it into an i32
             Ok(incoming_value) => {
@@ -50,7 +56,7 @@ impl KvCounter {
             }
             // If the value is missing or we fail to get it, assume it is zero
             Err(_) => {
-                eprintln!("encountered missing key [{key}], defaulting to 0");
+                eprintln!("[warn] encountered missing key [{key}], defaulting to 0");
                 0
             }
         };
@@ -64,13 +70,14 @@ impl KvCounter {
             outgoing_value_write_body(outgoing_value).expect("failed to write outgoing value");
 
         // Write out the new value
-        write(stream, (new_value).to_string().as_bytes())
+        write(stream, new_value.to_string().as_bytes())
             .expect("failed to write to outgoing value stream");
 
         // Set the key to the updated value
         set(bucket, key, outgoing_value).expect("failed to set value");
 
-        Ok(())
+        // Cheat and just assume the new value will be the increment
+        Ok(new_value)
     }
 }
 
@@ -78,7 +85,7 @@ impl KvCounter {
 fn write_http_response(
     response_outparam: ResponseOutparam,
     status_code: u16,
-    headers: &Vec<(String, Vec<u8>)>,
+    headers: &[(String, Vec<u8>)],
     body: impl AsRef<[u8]>,
 ) {
     // Add headers
@@ -125,25 +132,38 @@ impl IncomingHandler for KvCounter {
                     write_http_response(
                         response,
                         500,
-                        &Vec::new(),
-                        r#"{"status": "error", "error": "unexpected server error: failed to retreive error"}"#,
+                &content_type_json(),
+                        r#"{"error": "unexpected server error: failed to retreive bucket"}"#,
                     );
                     return;
                 };
 
                 // Increment the counter
-                if let Err(_) = KvCounter::increment_counter(bucket, &String::from("default"), 1) {
-                    write_http_response(
-                        response,
-                        500,
-                        &Vec::new(),
-                        r#"{"status": "error", "error": "unexpected server error: failed to increment default counter"}"#,
-                    );
-                    return;
-                }
+                let updated_value = match KvCounter::increment_counter(
+                    bucket,
+                    &String::from("default"),
+                    1,
+                ) {
+                    Ok(v) => v,
+                    Err(_) => {
+                        write_http_response(
+                            response,
+                            500,
+                            &content_type_json(),
+                            r#"{"error": "unexpected server error: failed to increment default counter"}"#,
+                        );
+                        return;
+                    }
+                };
 
                 // Build & write the response the response
-                write_http_response(response, 200, &Vec::new(), "0");
+                eprintln!("[success] successfully incremented default counter");
+                write_http_response(
+                    response,
+                    200,
+                &content_type_json(),
+                    format!(r#"{{"counter": {updated_value}}}"#),
+                )
             }
 
             // Update a counter
@@ -155,34 +175,49 @@ impl IncomingHandler for KvCounter {
                     write_http_response(
                         response,
                         500,
-                        &Vec::new(),
-                        r#"{"status": "error", "error": "unexpected server error: failed to retreive error"}"#,
+                        &content_type_json(),
+                        r#"{"status": "error", "error": "unexpected server error: failed to retreive bucket"}"#,
                     );
                     return;
                 };
 
                 // Increment the counter
-                if let Err(_) = KvCounter::increment_counter(bucket, &counter.to_string(), 1) {
-                    write_http_response(
-                        response,
-                        500,
-                        &Vec::new(),
-                        r#"{"status": "error", "error": "unexpected server error: failed to increment counter"}"#,
-                    );
-                    return;
-                }
+                let updated_value =
+                    match KvCounter::increment_counter(bucket, &counter.to_string(), 1) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            write_http_response(
+                                response,
+                                500,
+                &content_type_json(),
+                                format!(r#"{{"error": {e}}}"#),
+                            );
+                            return;
+                        }
+                    };
 
                 // Write out HTTP response
-                write_http_response(response, 200, &Vec::new(), "0");
+                eprintln!("[success] successfully incremented [{counter}] counter");
+                write_http_response(
+                    response,
+                    200,
+                &content_type_json(),
+                    format!(r#"{{"counter": {updated_value}}}"#),
+                );
             }
 
             // Any other GET request is interpreted as a static asset request for the UI
             (Method::Get, asset_path) => {
                 let path = asset_path.join("/");
                 match get_static_asset(&path) {
-                    Ok(bytes) => write_http_response(response, 200, &Vec::new(), bytes),
+                    Ok((content_type, bytes)) => write_http_response(
+                        response,
+                        200,
+                        &[("Content-Type".into(), content_type.into_bytes())],
+                        bytes,
+                    ),
                     Err(err) => {
-                        eprintln!("failed to retreive static asset @ [{path}]: {err:?}");
+                        eprintln!("[error] failed to retreive static asset @ [{path}]: {err:?}");
                         write_http_response(response, 404, &Vec::new(), "not found");
                     }
                 };
@@ -192,7 +227,7 @@ impl IncomingHandler for KvCounter {
             _ => write_http_response(
                 response,
                 400,
-                &Vec::new(),
+                &content_type_json(),
                 r#"{"status":"error,"error": "unrecognized operation"}"#,
             ),
         };

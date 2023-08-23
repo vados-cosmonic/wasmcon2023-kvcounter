@@ -35,10 +35,15 @@ build-wasm-tools:
 # Operations #
 ##############
 
+# NOTE: don't forget to set up WASMCLOUD_CLUSTER_SEED on the rust host when you start it!
+# NOTE: you *must* run kvredis v0.19.0
+
 expected_signed_wasm_path := absolute_path("build/wasmcon2023_keyvalue_s.wasm")
 
 # Run the actor on a given host
 run-actor host_id:
+    @echo "[warn] make sure to set WASMCLOUD_CLUSTER_SEED and WASMCLOUD_CLUSTER_ISSUERS appropriately for new hosts"
+    @echo "(see output of wash up for expected values of cluster seed & issuers)"
     @{{wash}} start actor file://{{expected_signed_wasm_path}} --host-id {{host_id}}
 
 # Set up links to a given in-lattice actor_id
@@ -46,4 +51,4 @@ setup-links actor_id:
     # Setting up links for HTTP provider (VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M)
     @{{wash}} link put {{actor_id}} VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M wasmcloud:httpserver
     # Setting up links for kvredis provider (VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M)
-    @{{wash}} link put {{actor_id}} VAZVC4RX54J2NVCMCW7BPCAHGGG5XZXDBXFUMDUXGESTMQEJLC3YVZWB wasmcloud:kvredis
+    @{{wash}} link put {{actor_id}} VAZVC4RX54J2NVCMCW7BPCAHGGG5XZXDBXFUMDUXGESTMQEJLC3YVZWB wasmcloud:keyvalue
