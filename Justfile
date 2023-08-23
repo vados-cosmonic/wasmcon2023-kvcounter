@@ -13,7 +13,7 @@ _default:
 build: build-wasmcloud # build-wasm-tools
 
 # Build the project, continuously
-build-watch: 
+build-watch:
     {{cargo}} watch --ignore=target -- {{just}} build
 
 # (build methodology) Build the WASM components using wasmcloud tooling (wash)
@@ -29,3 +29,15 @@ build-wasm-tools:
     # Adapting wasm preview1 module to preview2 component...
     @{{wasm_tools}} component new --adapt=wasi_snapshot_preview1.wasm {{expected_wasm_path}} -o {{wasm_preview2_output_path}}
     @echo "[success] preview2 component output to [{{wasm_preview2_output_path}}]"
+
+
+##############
+# Operations #
+##############
+
+# Set up links
+setup-links actor_id:
+    # Setting up links for HTTP provider (VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M)
+    @{{wash}} link put {{actor_id}} VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M wasmcloud:httpserver
+    # Setting up links for kvredis provider (VAG3QITQQ2ODAOWB5TTQSDJ53XK3SHBEIFNK4AYJ5RKAX2UNSCAPHA5M)
+    @{{wash}} link put {{actor_id}} VAZVC4RX54J2NVCMCW7BPCAHGGG5XZXDBXFUMDUXGESTMQEJLC3YVZWB wasmcloud:kvredis
