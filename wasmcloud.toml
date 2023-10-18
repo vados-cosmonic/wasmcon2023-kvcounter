@@ -5,4 +5,4 @@ type = "actor"
 [actor]
 claims = ["wasmcloud:httpserver", "wasmcloud:keyvalue"]
 wasm_target = "wasm32-wasi-preview2"
-wasi_preview2_adapter_path = "/home/mrman/code/work/cosmonic/wasmcon-2023-keyvalue/wasi_snapshot_preview1.wasm"
+wasi_preview2_adapter_path = "wasi_snapshot_preview1.wasm"
